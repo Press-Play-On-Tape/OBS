@@ -7,8 +7,10 @@
 #include "src/utils/Enums.h"
 #include "src/utils/EEPROM_Utils.h"
 #include "src/utils/Structs.h"
+#include "src/fonts/Font4x6.h"
 
 Arduboy2Ext arduboy;
+Font4x6 font4x6 = Font4x6();
 
 SplashScreenVars splashScreenVars;
 

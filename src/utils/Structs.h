@@ -30,10 +30,37 @@ struct Bullet : public Point {
 
 struct Enemy : public Point {
 
-    Direction direction = Direction::None;
-    Direction prevDirection = Direction::None;
+    bool active = false;
+    Path path = Path::None;
     Motion motion = Motion::None;
-    
-    uint8_t count = 0;
-    
+
+    uint8_t pathCount = 0; 
+    uint8_t yOffset = 0;         
+    uint8_t explodeCounter = 0;
+        
+    bool updateExplosion() {
+
+        if (this->explodeCounter > 0) {
+
+            this->explodeCounter--;
+
+            if (this->explodeCounter == 0) {
+
+                this->explodeCounter = 0;
+                return true;
+
+            }
+
+        }
+
+        return false;
+
+    }
+
+    bool getActive() {
+
+        return this->active;
+
+    }
+
 };

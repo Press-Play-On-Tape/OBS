@@ -20,8 +20,15 @@ enum class Motion : uint8_t {
 	Slow,
 	Fast
 };
+ 
+enum class Path : uint8_t {
+    None,
+	Small,
+	Large,
+};
 
 enum class HitObject : int8_t {
     None,
 	LargeAsteroid,
+	Enemy,
 };

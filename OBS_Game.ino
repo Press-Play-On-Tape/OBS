@@ -3,9 +3,10 @@
 #include "src/utils/Constants.h"
 
 
-uint8_t y = 9;
+uint16_t score = 0;
+uint8_t y = 26;
 Direction direction = Direction::Down;
-uint16_t health = 50 * 8;
+uint16_t health = (18 * Constants::Health_Factor) - 1;
 
 const int8_t xOffsets[] = { -2, 1, 2, 0 };
 const int8_t yOffsets[] = { 0, -2, 1, 2 };
@@ -126,13 +127,38 @@ void game() {
         if (bullet.x >= 128) {
             bullet.x = -1;
         }
+        else {
 
-        for (Asteroid &largeAsteroid : largeAsteroids) {
 
-            if (collide(bullet.x, bullet.y, Images::Bullet, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
-                bullet.hitObject = HitObject::LargeAsteroid;
-                bullet.hitCount = 1;
-                bullet.x = largeAsteroid.x - 4;
+            // Has the bullet hit a large asteroid?
+
+            for (Asteroid &largeAsteroid : largeAsteroids) {
+
+                if (collide(bullet.x, bullet.y, Images::Bullet, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
+                    bullet.hitObject = HitObject::LargeAsteroid;
+                    bullet.hitCount = 1;
+                    bullet.x = largeAsteroid.x - 4;
+                }
+
+            }
+
+
+            // Has the bullet hit an enemy?
+
+            for (Enemy &enemy : enemies) {
+
+                if (collide(bullet.x, bullet.y, Images::Bullet, enemy.x, enemy.y, Images::Enemy)) {
+
+                    bullet.hitObject = HitObject::Enemy;
+                    bullet.hitCount = 1;
+                    bullet.x = enemy.x - 4;
+
+                    enemy.explodeCounter = 21;
+                    enemy.active = false;
+                    score++;
+
+                }
+
             }
 
         }
@@ -140,7 +166,7 @@ void game() {
     }
 
 
-    // Has the player hit a large meteor?
+    // Has the player hit a asteroid meteor?
 
     bool collision = false;
 
@@ -163,10 +189,13 @@ void game() {
         if (offsetCount > 4) {
 
             offsetCount = 1;
-            xOffset = xOffsets[offsetCount - 1];
-            yOffset = yOffsets[offsetCount - 1];
 
         }
+
+        xOffset = xOffsets[offsetCount - 1];
+        yOffset = yOffsets[offsetCount - 1];
+        
+        arduboy.invert(offsetCount % 2);
 
     }
     else {
@@ -174,9 +203,9 @@ void game() {
         offsetCount = 0;
         xOffset = 0;
         yOffset = 0;
+        arduboy.invert(false);
 
     }
-
   
     // Move and render starfield ..
 
@@ -263,70 +292,28 @@ void game() {
 
                 if (arduboy.getFrameCount(2) == 0) {
 
-                    switch (enemy.direction) {
+                    switch (enemy.path) {
 
-                        case Direction::Up:
+                        case Path::Small:
 
-                            if (canMoveEnemy(enemy, enemy.x - 1, enemy.y - 1)) {
+                            enemy.pathCount++;
+                            if (enemy.pathCount == 70) enemy.pathCount = 0;
 
-                                enemy.x--;
-                                enemy.y--;
-
-                            }
-                            else  {
-                                enemy.x--;
-                            }
-
+                            enemy.x--;                    
+                            enemy.y = Constants::Enemy_Path_Small[enemy.pathCount];
                             break;
 
-                        case Direction::Down:
+                        case Path::Large:
 
-                            if (canMoveEnemy(enemy, enemy.x - 1, enemy.y + 1)) {
+                            enemy.pathCount++;
+                            if (enemy.pathCount == 91) enemy.pathCount = 0;
 
-                                enemy.x--;
-                                enemy.y++;
-
-                            }
-                            else  {
-                                enemy.x--;
-                            }
-
+                            enemy.x--;                    
+                            enemy.y = Constants::Enemy_Path_Large[enemy.pathCount] + enemy.yOffset;
                             break;
 
-                        case Direction::None:
-
-                            enemy.x--;
-                            break;                            
-
-                    }
-
-
-                    // Change direction?
-
-                    enemy.count--;
-
-                    if (enemy.count == 0) {
-
-                        enemy.count = 6 + random(0, 12);
-
-                        switch (enemy.direction) {
-
-                            case Direction::Up:
-                            case Direction::Down:
-                                enemy.prevDirection = enemy.direction;
-                                enemy.direction = Direction::None;
-                                break;
-
-                            default:
-                                if (enemy.prevDirection == Direction::Up) {
-                                    enemy.direction = Direction::Down;
-                                }
-                                else {
-                                    enemy.direction = Direction::Up;
-                                }
-                                break;
-
-                        }
+                        default:
+                            break;
 
                     }
 
@@ -337,67 +324,29 @@ void game() {
 
             case Motion::Fast:
 
-                switch (enemy.direction) {
+                if (arduboy.getFrameCount(3) < 2) {
 
-                    case Direction::Up:
+                    switch (enemy.path) {
 
-                        if (canMoveEnemy(enemy, enemy.x - 1, enemy.y - 1)) {
+                        case Path::Small:
 
-                            enemy.x--;
-                            enemy.y--;
+                            enemy.pathCount++;
+                            if (enemy.pathCount == 70) enemy.pathCount = 0;
 
-                        }
-                        else if (canMoveEnemy(enemy, enemy.x - 1, enemy.y)) {
-                            enemy.x--;
-                        }
+                            enemy.x--;                    
+                            enemy.y = Constants::Enemy_Path_Small[enemy.pathCount] + enemy.yOffset;
+                            break;
 
-                        break;
+                        case Path::Large:
 
-                    case Direction::Down:
+                            enemy.pathCount++;
+                            if (enemy.pathCount == 91) enemy.pathCount = 0;
 
-                        if (canMoveEnemy(enemy, enemy.x - 1, enemy.y + 1)) {
-
-                            enemy.x--;
-                            enemy.y++;
-
-                        }
-                        else if (canMoveEnemy(enemy, enemy.x - 1, enemy.y)) {
-                            enemy.x--;
-                        }
-
-                        break;
-
-                    case Direction::None:
-
-                        enemy.x--;
-                        break;                            
-
-                }
-
-
-                // Change direction?
-
-                enemy.count--;
-
-                if (enemy.count == 0) {
-
-                    enemy.count = 6 + random(0, 12);
-
-                    switch (enemy.direction) {
-
-                        case Direction::Up:
-                        case Direction::Down:
-                            enemy.prevDirection = enemy.direction;
-                            enemy.direction = Direction::None;
+                            enemy.x--;                    
+                            enemy.y = Constants::Enemy_Path_Large[enemy.pathCount];
                             break;
 
                         default:
-                            if (enemy.prevDirection == Direction::Up) {
-                                enemy.direction = Direction::Down;
-                            }
-                            else {
-                                enemy.direction = Direction::Up;
-                            }
                             break;
 
                     }
@@ -415,7 +364,26 @@ void game() {
 
         }
 
-        Sprites::drawExternalMask(enemy.x + xOffset, enemy.y + yOffset, Images::Enemy, Images::Enemy_Mask, 0, 0);
+        if (enemy.getActive() || enemy.explodeCounter > 16) {
+
+            Sprites::drawExternalMask(enemy.x + xOffset, enemy.y + yOffset, Images::Enemy, Images::Enemy_Mask, 0, 0);
+
+        }
+
+        if (enemy.explodeCounter > 0) {
+
+            Sprites::drawExternalMask(enemy.x + xOffset - 3, enemy.y + yOffset, 
+                                      pgm_read_word_near(&Images::Puffs[(21 - enemy.explodeCounter) / 3]), 
+                                      pgm_read_word_near(&Images::Puff_Masks[(21 - enemy.explodeCounter) / 3]), 
+                                      0, 0);
+
+        }
+        
+        if (enemy.updateExplosion()) {
+        
+            launchEnemy(enemy);
+
+        }
 
     }
 
@@ -448,18 +416,39 @@ void game() {
 
     // Render the HUD ..
 
-    arduboy.fillRect(121, 0, 8, 64, BLACK);
-    arduboy.drawRect(122, 0, 6, 64, WHITE);
+    arduboy.fillRect(78, 56, 64, 10, BLACK);
+    arduboy.fillRect(79, 56, 1, 10, WHITE);
+    arduboy.fillRect(127, 56, 1, 10, WHITE);
 
-    uint8_t health_Bar = health / 8;
+    uint8_t health_Bar = health / Constants::Health_Factor;
 
-    for (uint8_t i = 0; i < health_Bar; i++) {
+    font4x6.setCursor(82, 56);
+    if (score < 1000)   font4x6.print("0");
+    if (score < 100)    font4x6.print("0");
+    if (score < 10)     font4x6.print("0");
+    font4x6.print(score);
 
-        if (i % 2 == 0) {
 
-            arduboy.drawFastHLine(124, 61 - i, 2, WHITE);
+    switch (health_Bar / 6) {
 
-        }
+        case 0: 
+            Sprites::drawSelfMasked(103, 57, Images::Shield, health_Bar % 6);
+            Sprites::drawSelfMasked(111, 57, Images::Shield, 0);
+            Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
+            break;
+
+        case 1:
+            Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
+            Sprites::drawSelfMasked(111, 57, Images::Shield, health_Bar % 6);
+            Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
+            break;
+            
+
+        case 2:
+            Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
+            Sprites::drawSelfMasked(111, 57, Images::Shield, 5);
+            Sprites::drawSelfMasked(119, 57, Images::Shield, health_Bar % 6);
+            break;
 
     }
 

@@ -45,8 +45,23 @@ void launchEnemy(Enemy &enemy) {
 
         enemy.x = 128 + random(0, 96);
         enemy.y = random(0, 46);
-        enemy.count = random(6, 12);
+        enemy.pathCount = random(6, 12);
         enemy.motion = static_cast<Motion>(random(0, 3));
+        enemy.path = static_cast<Path>(random(1, 3));
+        enemy.active = true;
+
+        switch (enemy.path) {
+
+            case Path::None:
+            case Path::Large:
+                enemy.yOffset = 0;
+                break;
+
+            case Path::Small:
+                enemy.yOffset = random(0, 20);
+                break;
+            
+        }
 
 
         Rect enemy_Rect = { enemy.x, enemy.y, 6, 9 };
@@ -99,63 +114,6 @@ void launchEnemy(Enemy &enemy) {
 
 }
 
-
-// Can the enemy move to the spcified location?
-
-bool canMoveEnemy(Enemy &enemy, int16_t newX, int16_t newY) {
-
-
-    // Basic checks ..
-
-    if (newY < 0)  return false;
-    if (newY > 55) return false;
-
-    bool collision = false;
-    Rect enemy_Rect = { newX, newY, 6, 9 };
-
-
-    // Check for overlap with large asteroids ..
-    
-    for (Asteroid &largeAsteroid : largeAsteroids) {
-
-        Rect asteroid_Rect = { largeAsteroid.x - 4, largeAsteroid.y - 4, 27, 27 };
-
-        if (arduboy.collide(enemy_Rect, asteroid_Rect)) {
-
-            collision = true;
-            break;
-
-        }
-
-    }
-
-
-    // Check for overlap with other enemies ..
-    
-    if (!collision) {
-        
-        for (Enemy &enemy2 : enemies) {
-
-            if (enemy.x != enemy2.x || enemy.y != enemy2.y) {
-
-                Rect enemy_Rect2 = { enemy2.x - 2, enemy2.y - 2, 8, 11 };
-
-                if (arduboy.collide(enemy_Rect, enemy_Rect2)) {
-
-                    collision = true;
-                    break;
-
-                }
-
-            }
-
-        }
-
-    }
-
-    return !collision;    
-
-}
 
 /* ----------------------------------------------------------------------------
  *  Detect a collision between two separate images ..
