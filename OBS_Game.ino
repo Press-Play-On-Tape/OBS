@@ -5,7 +5,7 @@
 
 uint16_t score = 0;
 uint8_t y = 26;
-Direction direction = Direction::Down;
+Direction direction = Direction::None;
 uint16_t health = (18 * Constants::Health_Factor) - 1;
 
 const int8_t xOffsets[] = { -2, 1, 2, 0 };
@@ -15,16 +15,9 @@ const int8_t yOffsets[] = { 0, -2, 1, 2 };
 
 void game_Init() {
 
-    for (Point &star : starfield) {
-
-        star.x = random(0, 128);
-        star.y = random(0, 64);
-        
-    }
-
     for (Asteroid &smallAsteroid : smallAsteroids) {
 
-        smallAsteroid.x = random(0, 192);
+        smallAsteroid.x = random(128, 256);
         smallAsteroid.y = random(0, 56);
         
     }

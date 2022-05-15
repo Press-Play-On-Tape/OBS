@@ -32,3 +32,11 @@ enum class HitObject : int8_t {
 	LargeAsteroid,
 	Enemy,
 };
+
+enum class TitleMode : int8_t {
+    OBS,
+	Scroll_One,
+	Scenario,
+	Scroll_Two,
+	Entrance,
+};

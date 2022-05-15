@@ -13,6 +13,7 @@ Arduboy2Ext arduboy;
 Font4x6 font4x6 = Font4x6();
 
 SplashScreenVars splashScreenVars;
+TitleScreenVars titleScreenVars;
 
 GameState gameState = GameState::SplashScreen_Init;
 

@@ -8,6 +8,25 @@ struct SplashScreenVars {
 
 };
 
+struct TitleScreenVars {
+
+    uint8_t counter = 0;
+    TitleMode mode = TitleMode::OBS;
+    uint8_t panel = 0;
+    uint8_t index = 0;
+    bool skipTypewriter = false;
+
+    void reset() {
+
+        this->mode = TitleMode::OBS;
+        this->counter = 0;
+        this->panel = 0;
+        this->index = 0;
+        this->skipTypewriter = false;
+
+    }
+
+};
 
 struct Asteroid : public Point {
 
