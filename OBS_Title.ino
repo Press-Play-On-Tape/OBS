@@ -149,11 +149,11 @@ void title() {
             Sprites::drawExternalMask(10, 11 - (64 - titleScreenVars.counter), Images::Scenario, Images::Scenario_Mask, 0, 0);
 
             font4x6.setCursor(17, 19 - (64 - titleScreenVars.counter));
-            font4x6.print("..sort of! Avoid the");
+            font4x6.print(F("..sort of! Avoid the"));
             font4x6.setCursor(19, 29 - (64 - titleScreenVars.counter));
-            font4x6.print("asteroids and enemy");
+            font4x6.print(F("asteroids and enemy"));
             font4x6.setCursor(21, 39 - (64 - titleScreenVars.counter));
-            font4x6.print("ships and fly home.");
+            font4x6.print(F("ships and fly home."));
 
             if (titleScreenVars.counter == 0) {
 

@@ -737,13 +737,13 @@ void game() {
                 uint8_t health_Bar = player.health / Constants::Health_Factor;
 
                 font4x6.setCursor(24, 16);
-                font4x6.print("Your Score  ");
+                font4x6.print(F("Your Score  "));
                 if (arduboy.getFrameCountHalf(48) || player.score == 0) {
                     printScore(player.score);
                 }
 
                 font4x6.setCursor(24, 29);
-                font4x6.print("Top Scores  ");
+                font4x6.print(F("Top Scores  "));
 
                 if (scoreIndex != 0 || arduboy.getFrameCountHalf(48)) {
                     printScore(EEPROM_Utils::getScore(0));
@@ -814,10 +814,10 @@ void checkBulletCollision(Bullet &bullet) {
 
 void printScore(uint16_t score) {
 
-    if (score < 10000)  font4x6.print("0");
-    if (score < 1000)   font4x6.print("0");
-    if (score < 100)    font4x6.print("0");
-    if (score < 10)     font4x6.print("0");
+    if (score < 10000)  font4x6.print(F("0"));
+    if (score < 1000)   font4x6.print(F("0"));
+    if (score < 100)    font4x6.print(F("0"));
+    if (score < 10)     font4x6.print(F("0"));
     font4x6.print(score);
 
 }
