@@ -1,6 +1,6 @@
 
 #include "src/utils/Arduboy2Ext.h"
-#include <ArduboyFX.h>
+#include <ArduboyTones.h>
 
 #include "src/images/Images.h"
 #include "src/utils/Constants.h"
@@ -8,8 +8,10 @@
 #include "src/utils/EEPROM_Utils.h"
 #include "src/utils/Structs.h"
 #include "src/fonts/Font4x6.h"
+#include "src/sounds/Sounds.h"
 
 Arduboy2Ext arduboy;
+ArduboyTones sound(arduboy.audio.enabled);
 Font4x6 font4x6 = Font4x6();
 
 SplashScreenVars splashScreenVars;
@@ -32,6 +34,8 @@ Bullets bullets;
 int8_t xOffset = 0;
 int8_t yOffset = 0;
 uint8_t offsetCount = 0;
+uint8_t scoreIndex = 0;
+uint8_t clearScores = 0;
 
 const uint8_t PROGMEM lookup[] { 0xFF >> 8, 0xFF >> 7, 0xFF >> 6, 0xFF >> 5, 0xFF >> 4, 0xFF >> 3, 0xFF >> 2, 0xFF >> 1 };
 
@@ -43,9 +47,9 @@ void setup() {
     arduboy.systemButtons();
     arduboy.setFrameRate(50);
     arduboy.initRandomSeed();
+    arduboy.audio.begin();
 
-//    EEPROM_Utils::initEEPROM(false, GameMode::English, true);
-//    gamePlayVars.mode = EEPROM_Utils::getMode();
+    EEPROM_Utils::initEEPROM(false);
 
 }
 

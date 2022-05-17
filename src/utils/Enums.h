@@ -17,14 +17,13 @@ enum class Direction : int8_t {
 };
      
 enum class Motion : uint8_t {
-    None,
 	Slow,
 	Fast
 };
  
 enum class Path : uint8_t {
-    None,
-	Small,
+    Small,
+	Medium,
 	Large,
 };
 

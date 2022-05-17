@@ -3,21 +3,21 @@
 const uint8_t textLengths[] = { 50, 51, 54, 61 };
 
 const uint8_t PROGMEM IntroText_00[] = {    
-    4,'Y','o','u','r',' ','s','h','i','p',' ','h','a','s',' ','b','e','e','n',
-    10,'d','a','m','a','g','e','d',' ','b','y',' ','s','o','m','e',
-    15,'s','p','a','c','e',' ','d','e','b','r','i','s','.','.',
+    5,'Y','o','u','r',' ','s','h','i','p',' ','h','a','s',' ','b','e','e','n',
+    11,'d','a','m','a','g','e','d',' ','b','y',' ','s','o','m','e',
+    16,'s','p','a','c','e',' ','d','e','b','r','i','s','.','.',
     };
 
 const uint8_t PROGMEM IntroText_01[] = {
-    6,'.','.','t','h','e',' ','s','t','e','e','r','i','n','g',' ','i','s',
-    4,'b','r','o','k','e','n',' ','a','n','d',' ','y','o','u',' ','c','a','n',
-    16,'n','o','t',' ','n','a','v','i','g','a','t','e','.',
+    7,'.','.','t','h','e',' ','s','t','e','e','r','i','n','g',' ','i','s',
+    5,'b','r','o','k','e','n',' ','a','n','d',' ','y','o','u',' ','c','a','n',
+    17,'n','o','t',' ','n','a','v','i','g','a','t','e','.',
 };
 
 const uint8_t PROGMEM IntroText_02[] = {
-    5,'Y','o','u',' ','d','i','s','c','o','v','e','r',' ','t','h','a','t',
-    0,'b','y',' ','f','i','r','i','n','g',' ','t','h','e',' ','l','a','s','e','r',
-    12,'y','o','u',' ','c','a','n',' ','s','t','e','e','r','.','.',
+    8,'Y','o','u',' ','d','i','s','c','o','v','e','r',' ','t','h','a','t',
+    3,'b','y',' ','f','i','r','i','n','g',' ','t','h','e',' ','l','a','s','e','r',
+    15,'y','o','u',' ','c','a','n',' ','s','t','e','e','r','.','.',
 };
 
 const uint8_t PROGMEM IntroText_03[] = {
@@ -40,6 +40,11 @@ void title_Init() {
     }
 
     titleScreenVars.reset();
+    player.reset();
+
+    #ifdef SOUNDS
+        sound.tones(Sounds::Title);
+    #endif
 
 }
 
@@ -54,6 +59,11 @@ void title() {
         switch (titleScreenVars.mode) {
 
             case TitleMode::OBS:
+
+                #ifdef SOUNDS
+                sound.noTone();
+                #endif
+                
                 titleScreenVars.mode = TitleMode::Scroll_One;
                 titleScreenVars.counter = 64;
                 break;
@@ -106,9 +116,7 @@ void title() {
 
             titleScreenVars.counter--;
             Sprites::drawExternalMask(28, 11 - (64 - titleScreenVars.counter), Images::Title, Images::Title_Mask, 0, 0);
-            arduboy.fillRect(6, 72 - (64 - titleScreenVars.counter), 118, 50, BLACK);
-            Sprites::drawOverwrite(6, 72 - (64 - titleScreenVars.counter), Images::Border_TL, 0);
-            Sprites::drawOverwrite(104, 102 - (64 - titleScreenVars.counter), Images::Border_BR, 0);
+            Sprites::drawExternalMask(10, 75 - (64 - titleScreenVars.counter), Images::Scenario, Images::Scenario_Mask, 0, 0);
 
             if (titleScreenVars.counter == 0) {
 
@@ -120,9 +128,16 @@ void title() {
 
         case TitleMode::Scenario:
 
-            arduboy.fillRect(6, 8, 118, 50, BLACK);
-            Sprites::drawOverwrite(6, 8, Images::Border_TL, 0);
-            Sprites::drawOverwrite(104, 38, Images::Border_BR, 0);
+            Sprites::drawExternalMask(10, 11, Images::Scenario, Images::Scenario_Mask, 0, 0);
+
+            if (titleScreenVars.index < textLengths[titleScreenVars.panel] && arduboy.getFrameCount(6) == 0) {
+                
+                #ifdef SOUNDS                
+                    sound.tones(Sounds::Keypress);
+                #endif
+
+            }
+
             introText();
 
             break;
@@ -131,15 +146,13 @@ void title() {
         case TitleMode::Scroll_Two:
 
             titleScreenVars.counter--;
-            arduboy.fillRect(6, 8 - (64 - titleScreenVars.counter), 118, 50, BLACK);
-            Sprites::drawOverwrite(6, 8 - (64 - titleScreenVars.counter), Images::Border_TL, 0);
-            Sprites::drawOverwrite(104, 38 - (64 - titleScreenVars.counter), Images::Border_BR, 0);
+            Sprites::drawExternalMask(10, 11 - (64 - titleScreenVars.counter), Images::Scenario, Images::Scenario_Mask, 0, 0);
 
-            font4x6.setCursor(18, 19 - (64 - titleScreenVars.counter));
+            font4x6.setCursor(17, 19 - (64 - titleScreenVars.counter));
             font4x6.print("..sort of! Avoid the");
-            font4x6.setCursor(20, 29 - (64 - titleScreenVars.counter));
+            font4x6.setCursor(19, 29 - (64 - titleScreenVars.counter));
             font4x6.print("asteroids and enemy");
-            font4x6.setCursor(22, 39 - (64 - titleScreenVars.counter));
+            font4x6.setCursor(21, 39 - (64 - titleScreenVars.counter));
             font4x6.print("ships and fly home.");
 
             if (titleScreenVars.counter == 0) {
@@ -191,7 +204,7 @@ void introText() {
                 break;
             
             default:
-                font4x6.setCursor(18 + x, 9 + (line * 10));
+                font4x6.setCursor(17 + x, 9 + (line * 10));
                 font4x6.print(static_cast<char>(c));
                 x = x + 5;
                 break;

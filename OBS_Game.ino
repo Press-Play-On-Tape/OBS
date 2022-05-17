@@ -1,6 +1,8 @@
 
 #include <Arduboy2.h>     
+
 #include "src/utils/Constants.h"
+#include "src/utils/Utils.h"
 
 const int8_t xOffsets[] = { -2, 1, 2, 0 };
 const int8_t yOffsets[] = { 0, -2, 1, 2 };
@@ -36,6 +38,8 @@ void game_Init() {
 
     player.reset();
     gameState = GameState::Game;
+    scoreIndex = 0;
+    arduboy.setFrameRate(50);
 
 }
 
@@ -119,6 +123,9 @@ void game() {
                             bullet.y = player.y + 2;
                         #endif
                         
+                        #ifdef SOUNDS
+                            sound.tones(Sounds::PlayerFiresBullet);
+                        #endif
                         bullet.hitObject = HitObject::None;
 
                     }
@@ -176,6 +183,10 @@ void game() {
                             #else
                                 bullet.x = 12;
                                 bullet.y = player.y + 2;
+                            #endif
+
+                            #ifdef SOUNDS
+                                sound.tones(Sounds::PlayerFiresBullet);
                             #endif
 
                             bullet.hitObject = HitObject::None;
@@ -255,8 +266,23 @@ void game() {
 
                     if (collide(9, player.y, Images::PlayerShip, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
 
-                        if (player.health > 0)  player.health--;
-                        if (player.health == 0) player.explodeCounter = 21;
+                        if (player.health > 0)  {
+                            player.health--;
+
+                            #ifdef SOUNDS
+                                sound.tones(Sounds::PlayerHit);
+                            #endif
+                        }
+
+                        if (player.health == 0) {
+                            player.explodeCounter = 21;
+
+                            #ifdef SOUNDS
+                                sound.tones(Sounds::PlayerDies);
+                            #endif
+
+                        }
+
                         collision = true;
                         break;
 
@@ -289,8 +315,24 @@ void game() {
 
                         if (collide(9, player.y, Images::PlayerShip, enemy.x, enemy.y, Images::Enemy)) {
 
-                            if (player.health > 0)  player.health--;
-                            if (player.health == 0) player.explodeCounter = 21;
+                            if (player.health > 0)  {
+                                player.health--;
+
+                                #ifdef SOUNDS
+                                    sound.tones(Sounds::PlayerHit);
+                                #endif
+
+                            }
+
+                            if (player.health == 0) {
+                                player.explodeCounter = 21;
+
+                                #ifdef SOUNDS
+                                    sound.tones(Sounds::PlayerDies);
+                                #endif
+
+                            }
+                            
                             collision = true;
                             break;
 
@@ -335,6 +377,42 @@ void game() {
 
                 gameState = GameState::Title_Init;
 
+            }
+
+
+            // Clear scores ..
+
+            if (arduboy.pressed(B_BUTTON)) {
+
+                clearScores++;
+
+                switch (clearScores) {
+
+                    case 21 ... 60:
+                    arduboy.setRGBled(128 - (clearScores * 2), 0, 0);
+                    break;
+
+                    case 61:
+                    clearScores = 0;
+                    player.score = 0;
+                    scoreIndex = 255;
+                    arduboy.setRGBled(0, 0, 0);
+                    EEPROM_Utils::initEEPROM(true);
+                    sound.tone(NOTE_C6, 100);
+                    return;
+
+                }
+
+            }
+            else {
+
+                if (clearScores > 0) {
+                
+                    arduboy.setRGBled(0, 0, 0);
+                    clearScores = 0;
+
+                }
+            
             }
 
             break;
@@ -435,14 +513,6 @@ void game() {
 
         switch (enemy.motion) {
 
-            case Motion::None:
-
-                if (arduboy.getFrameCount(2) == 0) {
-                    enemy.x--;
-                }
-
-                break;
-
             case Motion::Slow:
 
                 if (arduboy.getFrameCount(2) == 0) {
@@ -452,10 +522,19 @@ void game() {
                         case Path::Small:
 
                             enemy.pathCount++;
-                            if (enemy.pathCount == 70) enemy.pathCount = 0;
+                            if (enemy.pathCount == 36) enemy.pathCount = 0;
 
                             enemy.x--;                    
                             enemy.y = Constants::Enemy_Path_Small[enemy.pathCount];
+                            break;
+
+                        case Path::Medium:
+
+                            enemy.pathCount++;
+                            if (enemy.pathCount == 70) enemy.pathCount = 0;
+
+                            enemy.x--;                    
+                            enemy.y = Constants::Enemy_Path_Medium[enemy.pathCount];
                             break;
 
                         case Path::Large:
@@ -486,10 +565,19 @@ void game() {
                         case Path::Small:
 
                             enemy.pathCount++;
-                            if (enemy.pathCount == 70) enemy.pathCount = 0;
+                            if (enemy.pathCount == 36) enemy.pathCount = 0;
 
                             enemy.x--;                    
                             enemy.y = Constants::Enemy_Path_Small[enemy.pathCount] + enemy.yOffset;
+                            break;
+
+                        case Path::Medium:
+
+                            enemy.pathCount++;
+                            if (enemy.pathCount == 70) enemy.pathCount = 0;
+
+                            enemy.x--;                    
+                            enemy.y = Constants::Enemy_Path_Medium[enemy.pathCount] + enemy.yOffset;
                             break;
 
                         case Path::Large:
@@ -592,6 +680,7 @@ void game() {
 
                 #endif
 
+
                 // Render player ..
 
                 if (player.health > 0 || player.explodeCounter > 16) {
@@ -613,47 +702,28 @@ void game() {
                 if (player.updateExplosion()) {
                 
                     gameState = GameState::Score;
+                    scoreIndex = EEPROM_Utils::saveScore(player.score);
 
                 }
 
 
                 // Render the HUD ..
 
-                arduboy.fillRect(78, 56, 64, 10, BLACK);
-                arduboy.fillRect(79, 56, 1, 10, WHITE);
-                arduboy.fillRect(127, 56, 1, 10, WHITE);
+                arduboy.fillRect(106, 57, 22, 7, BLACK);
 
                 uint8_t health_Bar = player.health / Constants::Health_Factor;
+                uint8_t digits[5] = {};
+                extractDigits(digits, player.score);
+                uint8_t location = 124;
 
-                font4x6.setCursor(82, 56);
-                if (player.score < 1000)   font4x6.print("0");
-                if (player.score < 100)    font4x6.print("0");
-                if (player.score < 10)     font4x6.print("0");
-                font4x6.print(player.score);
+                for (uint8_t j = 0; j < 5; ++j, location -= 4) {
 
-
-                switch (health_Bar / 6) {
-
-                    case 0: 
-                        Sprites::drawSelfMasked(103, 57, Images::Shield, health_Bar % 6);
-                        Sprites::drawSelfMasked(111, 57, Images::Shield, 0);
-                        Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
-                        break;
-
-                    case 1:
-                        Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
-                        Sprites::drawSelfMasked(111, 57, Images::Shield, health_Bar % 6);
-                        Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
-                        break;
-                        
-
-                    case 2:
-                        Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
-                        Sprites::drawSelfMasked(111, 57, Images::Shield, 5);
-                        Sprites::drawSelfMasked(119, 57, Images::Shield, health_Bar % 6);
-                        break;
+                    Sprites::drawOverwrite(location, 58, Images::Numbers, digits[j]);
 
                 }
+
+                Sprites::drawExternalMask(83, 0, Images::Shield, Images::Shield_Mask, 0, 0);
+                arduboy.drawFastHLine(109, 3, health_Bar, WHITE);
 
             }
 
@@ -661,15 +731,34 @@ void game() {
 
         case GameState::Score:
             {
-                Sprites::drawExternalMask(34, 22, Images::Score, Images::Score_Mask, 0, 0);
+                Sprites::drawExternalMask(10, 7, Images::HighScore, Images::HighScore_Mask, 0, 0);
 
+                uint16_t score = 0;
                 uint8_t health_Bar = player.health / Constants::Health_Factor;
 
-                font4x6.setCursor(55, 29);
-                if (player.score < 1000)   font4x6.print("0");
-                if (player.score < 100)    font4x6.print("0");
-                if (player.score < 10)     font4x6.print("0");
-                font4x6.print(player.score);
+                font4x6.setCursor(24, 16);
+                font4x6.print("Your Score  ");
+                if (arduboy.getFrameCountHalf(48) || player.score == 0) {
+                    printScore(player.score);
+                }
+
+                font4x6.setCursor(24, 29);
+                font4x6.print("Top Scores  ");
+
+                if (scoreIndex != 0 || arduboy.getFrameCountHalf(48)) {
+                    printScore(EEPROM_Utils::getScore(0));
+                }
+
+                if (scoreIndex != 1 || arduboy.getFrameCountHalf(48)) {
+                    font4x6.setCursor(78, 38);
+                    printScore(EEPROM_Utils::getScore(1));
+                }
+
+                if (scoreIndex != 2 || arduboy.getFrameCountHalf(48)) {
+                    font4x6.setCursor(78, 47);
+                    printScore(EEPROM_Utils::getScore(2));
+                }
+
             }
 
             break;
@@ -711,10 +800,24 @@ void checkBulletCollision(Bullet &bullet) {
             enemy.active = false;
             player.score = player.score + 5;
 
-            arduboy.setFrameRate(50 + (player.score / 4));
+            arduboy.setFrameRate(50 + (player.score / 24));
+
+            #ifdef SOUNDS
+                sound.tones(Sounds::EnemyExplosion);
+            #endif
 
         }
 
     }
+
+}
+
+void printScore(uint16_t score) {
+
+    if (score < 10000)  font4x6.print("0");
+    if (score < 1000)   font4x6.print("0");
+    if (score < 100)    font4x6.print("0");
+    if (score < 10)     font4x6.print("0");
+    font4x6.print(score);
 
 }

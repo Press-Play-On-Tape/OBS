@@ -86,8 +86,8 @@ struct Bullets {
 struct Enemy : public Point {
 
     bool active = false;
-    Path path = Path::None;
-    Motion motion = Motion::None;
+    Path path = Path::Small;
+    Motion motion = Motion::Slow;
 
     uint8_t pathCount = 0; 
     uint8_t yOffset = 0;         
@@ -125,7 +125,7 @@ struct Player {
     uint8_t y = 26;
     uint16_t score = 0;
 
-    uint16_t health = (18 * Constants::Health_Factor) - 1;
+    uint16_t health = (17 * Constants::Health_Factor) - 1;
     uint8_t explodeCounter = 0;
 
     Direction direction = Direction::None;
@@ -154,7 +154,7 @@ struct Player {
         this->y = 26;
         this->score = 0;
         this->direction = Direction::None;
-        this->health = (18 * Constants::Health_Factor) - 1;
+        this->health = (17 * Constants::Health_Factor) - 1;
         this->explodeCounter = 0;
 
     }
