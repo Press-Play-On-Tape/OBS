@@ -39,6 +39,8 @@ void title_Init() {
         
     }
 
+    titleScreenVars.reset();
+
 }
 
 
@@ -152,8 +154,8 @@ void title() {
         case TitleMode::Entrance:
 
             titleScreenVars.counter++;
-            Sprites::drawExternalMask(-16 + titleScreenVars.counter, y, Images::PlayerShip, Images::PlayerShip_Mask, 0, 0);
-            Sprites::drawExternalMask(-25 + titleScreenVars.counter, y + 3, Images::ShipParticle, Images::ShipParticle_Mask, arduboy.getFrameCountHalf(8), arduboy.getFrameCountHalf(8));
+            Sprites::drawExternalMask(-16 + titleScreenVars.counter, player.y, Images::PlayerShip, Images::PlayerShip_Mask, 0, 0);
+            Sprites::drawExternalMask(-25 + titleScreenVars.counter, player.y + 3, Images::ShipParticle, Images::ShipParticle_Mask, arduboy.getFrameCountHalf(8), arduboy.getFrameCountHalf(8));
 
             if (titleScreenVars.counter == 25) {
 

@@ -7,6 +7,7 @@ enum class GameState : uint8_t {
 	Title,
 	Game_Init,
 	Game,
+	Score,
 };
     
 enum class Direction : int8_t {

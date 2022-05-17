@@ -1,7 +1,9 @@
 #pragma once
 
-#define _USE_BRINE
-/* TEASE PRUNE DRONE CRIME BLINK and BRIEF or BRINE */
+#define _ORIG_BULLET
+#define _ORIG_PLAYER
+#define _ORIG_ENEMY
+#define _ONE_BULLET
 
 namespace Constants {
 
@@ -10,6 +12,9 @@ namespace Constants {
     constexpr uint8_t LargeAsteroid_Size = 2;
     constexpr uint8_t Enemy_Size = 3;
     constexpr uint8_t Health_Factor = 8;
+    constexpr uint8_t ScoreDistance = 96;
+    constexpr uint8_t Bullet_Count = 2;
+    constexpr uint8_t Bullet_None = 255;
 
     constexpr uint16_t EEPROM_Char1 = 78;
     constexpr uint16_t EEPROM_Char2 = EEPROM_Char1 + 1;

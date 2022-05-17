@@ -1,6 +1,7 @@
-#include <Arduboy2.h>
-
 #pragma once
+
+#include <Arduboy2.h>
+#include "../utils/Constants.h"
 
 struct SplashScreenVars {
 
@@ -47,6 +48,41 @@ struct Bullet : public Point {
 
 };
 
+#ifndef ONE_BULLET
+struct Bullets {
+
+    Bullet bullets[Constants::Bullet_Count];
+    
+    void reset() {
+
+        for (Bullet &bullet : this->bullets) {
+
+            bullet.reset();
+
+        }
+
+    }
+
+    uint8_t getInactiveBullet() {
+
+        for (uint8_t i = 0; i < Constants::Bullet_Count; i++) {
+
+            Bullet &bullet = this->bullets[i];
+
+            if (bullet.x == -1) {
+
+                return i;
+
+            }
+
+        }
+
+        return Constants::Bullet_None;
+    }
+
+};
+#endif
+
 struct Enemy : public Point {
 
     bool active = false;
@@ -79,6 +115,47 @@ struct Enemy : public Point {
     bool getActive() {
 
         return this->active;
+
+    }
+
+};
+
+struct Player {
+
+    uint8_t y = 26;
+    uint16_t score = 0;
+
+    uint16_t health = (18 * Constants::Health_Factor) - 1;
+    uint8_t explodeCounter = 0;
+
+    Direction direction = Direction::None;
+
+    bool updateExplosion() {
+
+        if (this->explodeCounter > 0) {
+
+            this->explodeCounter--;
+
+            if (this->explodeCounter == 0) {
+
+                this->explodeCounter = 0;
+                return true;
+
+            }
+
+        }
+
+        return false;
+
+    }
+
+    void reset() {
+
+        this->y = 26;
+        this->score = 0;
+        this->direction = Direction::None;
+        this->health = (18 * Constants::Health_Factor) - 1;
+        this->explodeCounter = 0;
 
     }
 

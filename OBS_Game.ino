@@ -2,12 +2,6 @@
 #include <Arduboy2.h>     
 #include "src/utils/Constants.h"
 
-
-uint16_t score = 0;
-uint8_t y = 26;
-Direction direction = Direction::None;
-uint16_t health = (18 * Constants::Health_Factor) - 1;
-
 const int8_t xOffsets[] = { -2, 1, 2, 0 };
 const int8_t yOffsets[] = { 0, -2, 1, 2 };
 
@@ -34,7 +28,13 @@ void game_Init() {
         
     }
 
+    #ifdef ONE_BULLET
     bullet.reset();
+    #else
+    bullets.reset();
+    #endif
+
+    player.reset();
     gameState = GameState::Game;
 
 }
@@ -47,159 +47,305 @@ void game() {
 
     // Move player ..
 
-    y = y + static_cast<int8_t>(direction);
+    switch (gameState) {
+    
+        case GameState::Game:
+            {
 
-    if (direction == Direction::Up && y == 0) {
-        direction = Direction::None;
-    }
+                // Increase score based on distance travelled ..
 
-    if (direction == Direction::Down && y == 54) {
-        direction = Direction::None;
-    }
+                if (arduboy.getFrameCount(Constants::ScoreDistance) == 0) {
 
+                    player.score++;
 
-    if (arduboy.justPressed(A_BUTTON) && bullet.x == -1) {
+                }
 
-        switch (direction) {
+                player.y = player.y + static_cast<int8_t>(player.direction);
 
-            case Direction::Up:
-                direction = Direction::Down;
-                break;
+                if (player.direction == Direction::Up && player.y == 0) {
+                    player.direction = Direction::None;
+                }
 
-            case Direction::Down:
-                direction = Direction::Up;
-                break;
+                if (player.direction == Direction::Down && player.y == 54) {
+                    player.direction = Direction::None;
+                }
 
-            default:
+                #ifdef ONE_BULLET
 
-                switch (y) {
+                    if (arduboy.justPressed(A_BUTTON) && bullet.x == -1) {
 
-                    case 0:
-                        direction = Direction::Down;
-                        break;
+                        switch (player.direction) {
 
-                    case 54:
-                        direction = Direction::Up;
-                        break;
+                            case Direction::Up:
+                                player.direction = Direction::Down;
+                                break;
 
-                    default:
-                        if (random(0,2) == 0) {
-                            direction = Direction::Up;
+                            case Direction::Down:
+                                player.direction = Direction::Up;
+                                break;
+
+                            default:
+
+                                switch (player.y) {
+
+                                    case 0:
+                                        player.direction = Direction::Down;
+                                        break;
+
+                                    case 54:
+                                        player.direction = Direction::Up;
+                                        break;
+
+                                    default:
+                                        if (random(0,2) == 0) {
+                                            player.direction = Direction::Up;
+                                        }
+                                        else {
+                                            player.direction = Direction::Down;
+                                        }
+                                        break;
+
+                                }
+
+                                break;
+                                
+                        }
+
+                        #ifdef ORIG_BULLET
+                            bullet.x = 12;
+                            bullet.y = player.y + 5;
+                        #else
+                            bullet.x = 12;
+                            bullet.y = player.y + 2;
+                        #endif
+                        
+                        bullet.hitObject = HitObject::None;
+
+                    }
+
+                #else
+
+                    if (arduboy.justPressed(A_BUTTON)) {
+                        
+                        uint8_t bulletIdx = bullets.getInactiveBullet();
+
+                        if (bulletIdx != Constants::Bullet_None) {
+
+                            Bullet &bullet = bullets.bullets[bulletIdx];
+
+                            switch (player.direction) {
+
+                                case Direction::Up:
+                                    player.direction = Direction::Down;
+                                    break;
+
+                                case Direction::Down:
+                                    player.direction = Direction::Up;
+                                    break;
+
+                                default:
+
+                                    switch (player.y) {
+
+                                        case 0:
+                                            player.direction = Direction::Down;
+                                            break;
+
+                                        case 54:
+                                            player.direction = Direction::Up;
+                                            break;
+
+                                        default:
+                                            if (random(0,2) == 0) {
+                                                player.direction = Direction::Up;
+                                            }
+                                            else {
+                                                player.direction = Direction::Down;
+                                            }
+                                            break;
+
+                                    }
+
+                                    break;
+                                    
+                            }
+
+                            #ifdef ORIG_BULLET
+                                bullet.x = 12;
+                                bullet.y = player.y + 5;
+                            #else
+                                bullet.x = 12;
+                                bullet.y = player.y + 2;
+                            #endif
+
+                            bullet.hitObject = HitObject::None;
+
+                        }
+
+                    }
+
+                #endif
+
+                #ifdef ONE_BULLET
+
+                    if (bullet.hitCount > 0) {
+
+                        bullet.hitCount++;
+
+                        if (bullet.hitCount > 3) {
+                            bullet.reset();
+                        }
+
+                    }
+
+                    if (bullet.x > 0 && bullet.hitCount == 0) {
+
+                        bullet.x = bullet.x + 4;
+
+                        if (bullet.x >= 128) {
+                            bullet.x = -1;
                         }
                         else {
-                            direction = Direction::Down;
+
+                            checkBulletCollision(bullet);
+
                         }
+
+                    }
+
+                #else
+
+                    for (Bullet &bullet : bullets.bullets) {
+                            
+                        if (bullet.hitCount > 0) {
+
+                            bullet.hitCount++;
+
+                            if (bullet.hitCount > 3) {
+                                bullet.reset();
+                            }
+
+                        }
+
+                        if (bullet.x > 0 && bullet.hitCount == 0) {
+
+                            bullet.x = bullet.x + 4;
+
+                            if (bullet.x >= 128) {
+                                bullet.x = -1;
+                            }
+                            else {
+
+                                checkBulletCollision(bullet);
+
+                            }
+
+                        }
+
+                    }
+
+                #endif
+
+
+                // Has the player hit a asteroid meteor?
+
+                bool collision = false;
+
+                for (Asteroid &largeAsteroid : largeAsteroids) {
+
+                    if (collide(9, player.y, Images::PlayerShip, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
+
+                        if (player.health > 0)  player.health--;
+                        if (player.health == 0) player.explodeCounter = 21;
+                        collision = true;
                         break;
 
+                    }
+
                 }
 
-                break;
-                
-        }
+                if (collision) {
 
-        bullet.x = 12;
-        bullet.y = y + 5;
-        bullet.hitObject = HitObject::None;
+                    offsetCount++;
 
-    }
+                    if (offsetCount > 4) {
 
-    if (bullet.hitCount > 0) {
+                        offsetCount = 1;
 
-        bullet.hitCount++;
+                    }
 
-        if (bullet.hitCount > 3) {
-            bullet.reset();
-        }
+                    xOffset = xOffsets[offsetCount - 1];
+                    yOffset = yOffsets[offsetCount - 1];
+                    
+                    arduboy.invert(offsetCount % 2);
 
-    }
-
-    if (bullet.x > 0 && bullet.hitCount == 0) {
-
-        bullet.x = bullet.x + 4;
-
-        if (bullet.x >= 128) {
-            bullet.x = -1;
-        }
-        else {
+                }
+                else {
 
 
-            // Has the bullet hit a large asteroid?
+                    // Has the player hit an enemy ?
 
-            for (Asteroid &largeAsteroid : largeAsteroids) {
+                    for (Enemy &enemy : enemies) {
 
-                if (collide(bullet.x, bullet.y, Images::Bullet, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
-                    bullet.hitObject = HitObject::LargeAsteroid;
-                    bullet.hitCount = 1;
-                    bullet.x = largeAsteroid.x - 4;
+                        if (collide(9, player.y, Images::PlayerShip, enemy.x, enemy.y, Images::Enemy)) {
+
+                            if (player.health > 0)  player.health--;
+                            if (player.health == 0) player.explodeCounter = 21;
+                            collision = true;
+                            break;
+
+                        }
+
+                    }
+
+                    if (collision) {
+
+                        offsetCount++;
+
+                        if (offsetCount > 4) {
+
+                            offsetCount = 1;
+
+                        }
+
+                        xOffset = xOffsets[offsetCount - 1];
+                        yOffset = yOffsets[offsetCount - 1];
+                        
+                        arduboy.invert(offsetCount % 2);
+
+                    }
+                    else {
+
+                        offsetCount = 0;
+                        xOffset = 0;
+                        yOffset = 0;
+                        arduboy.invert(false);
+
+                    }
+
                 }
 
             }
 
-
-            // Has the bullet hit an enemy?
-
-            for (Enemy &enemy : enemies) {
-
-                if (collide(bullet.x, bullet.y, Images::Bullet, enemy.x, enemy.y, Images::Enemy)) {
-
-                    bullet.hitObject = HitObject::Enemy;
-                    bullet.hitCount = 1;
-                    bullet.x = enemy.x - 4;
-
-                    enemy.explodeCounter = 21;
-                    enemy.active = false;
-                    score++;
-
-                }
-
-            }
-
-        }
-
-    }
-
-
-    // Has the player hit a asteroid meteor?
-
-    bool collision = false;
-
-    for (Asteroid &largeAsteroid : largeAsteroids) {
-
-        if (collide(9, y, Images::PlayerShip, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
-
-            health--;
-            collision = true;
             break;
 
-        }
+        case GameState::Score:
 
-    }
+            if (arduboy.justPressed(A_BUTTON)) {
 
-    if (collision) {
+                gameState = GameState::Title_Init;
 
-        offsetCount++;
+            }
 
-        if (offsetCount > 4) {
+            break;
 
-            offsetCount = 1;
+        default:
 
-        }
-
-        xOffset = xOffsets[offsetCount - 1];
-        yOffset = yOffsets[offsetCount - 1];
-        
-        arduboy.invert(offsetCount % 2);
-
-    }
-    else {
-
-        offsetCount = 0;
-        xOffset = 0;
-        yOffset = 0;
-        arduboy.invert(false);
+            break;
 
     }
   
+
     // Move and render starfield ..
 
     for (Point &star : starfield) {
@@ -254,11 +400,27 @@ void game() {
 
             }
 
-            if (bullet.hitObject == HitObject::LargeAsteroid) {
+            #ifdef ONE_BULLET
+                
+                if (bullet.hitObject == HitObject::LargeAsteroid) {
 
-                bullet.x--;
+                    bullet.x--;
 
-            }
+                }
+
+            #else
+
+                for (Bullet &bullet : bullets.bullets) {
+                
+                    if (bullet.hitObject == HitObject::LargeAsteroid) {
+
+                        bullet.x--;
+
+                    }
+
+                }
+
+            #endif
 
         }
 
@@ -381,67 +543,177 @@ void game() {
     }
 
 
+    switch (gameState) {
 
-    // Render player bullet ..
+        case GameState::Game:
+            {
 
-    if (bullet.x > 0) {
+                // Render player bullet ..
 
-        switch (bullet.hitCount) {
+                #ifdef ONE_BULLET
+                    
+                    if (bullet.x > 0) {
 
-            case 0:
-                Sprites::drawExternalMask(bullet.x + xOffset, bullet.y + yOffset, Images::Bullet, Images::Bullet_Mask, 0, 0);
-                break;
+                        switch (bullet.hitCount) {
 
-            default:
-                Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y - 5 + yOffset, Images::Hit, bullet.hitCount - 1);
-                break;
+                            case 0:
+                                Sprites::drawExternalMask(bullet.x + xOffset, bullet.y + yOffset, Images::Bullet, Images::Bullet_Mask, 0, 0);
+                                break;
 
+                            default:
+                                Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y - 5 + yOffset, Images::Hit, bullet.hitCount - 1);
+                                break;
+
+                        }
+
+                    }
+
+                #else
+                    
+                    for (Bullet &bullet : bullets.bullets) {
+                                                
+                        if (bullet.x > 0) {
+
+                            switch (bullet.hitCount) {
+
+                                case 0:
+                                    Sprites::drawExternalMask(bullet.x + xOffset, bullet.y + yOffset, Images::Bullet, Images::Bullet_Mask, 0, 0);
+                                    break;
+
+                                default:
+                                    Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y - 5 + yOffset, Images::Hit, bullet.hitCount - 1);
+                                    break;
+
+                            }
+
+                        }
+
+                    }
+
+                #endif
+
+                // Render player ..
+
+                if (player.health > 0 || player.explodeCounter > 16) {
+
+                    Sprites::drawExternalMask(9 + xOffset, player.y + yOffset, Images::PlayerShip, Images::PlayerShip_Mask, 0, 0);
+                    Sprites::drawExternalMask(xOffset, player.y + 3 + yOffset, Images::ShipParticle, Images::ShipParticle_Mask, arduboy.getFrameCountHalf(8), arduboy.getFrameCountHalf(8));
+
+                }
+                
+                if (player.explodeCounter > 0) {
+
+                    Sprites::drawExternalMask(6, player.y + yOffset, 
+                                                pgm_read_word_near(&Images::Puffs[(21 - player.explodeCounter) / 3]), 
+                                                pgm_read_word_near(&Images::Puff_Masks[(21 - player.explodeCounter) / 3]), 
+                                                0, 0);
+
+                }
+                
+                if (player.updateExplosion()) {
+                
+                    gameState = GameState::Score;
+
+                }
+
+
+                // Render the HUD ..
+
+                arduboy.fillRect(78, 56, 64, 10, BLACK);
+                arduboy.fillRect(79, 56, 1, 10, WHITE);
+                arduboy.fillRect(127, 56, 1, 10, WHITE);
+
+                uint8_t health_Bar = player.health / Constants::Health_Factor;
+
+                font4x6.setCursor(82, 56);
+                if (player.score < 1000)   font4x6.print("0");
+                if (player.score < 100)    font4x6.print("0");
+                if (player.score < 10)     font4x6.print("0");
+                font4x6.print(player.score);
+
+
+                switch (health_Bar / 6) {
+
+                    case 0: 
+                        Sprites::drawSelfMasked(103, 57, Images::Shield, health_Bar % 6);
+                        Sprites::drawSelfMasked(111, 57, Images::Shield, 0);
+                        Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
+                        break;
+
+                    case 1:
+                        Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
+                        Sprites::drawSelfMasked(111, 57, Images::Shield, health_Bar % 6);
+                        Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
+                        break;
+                        
+
+                    case 2:
+                        Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
+                        Sprites::drawSelfMasked(111, 57, Images::Shield, 5);
+                        Sprites::drawSelfMasked(119, 57, Images::Shield, health_Bar % 6);
+                        break;
+
+                }
+
+            }
+
+            break;
+
+        case GameState::Score:
+            {
+                Sprites::drawExternalMask(34, 22, Images::Score, Images::Score_Mask, 0, 0);
+
+                uint8_t health_Bar = player.health / Constants::Health_Factor;
+
+                font4x6.setCursor(55, 29);
+                if (player.score < 1000)   font4x6.print("0");
+                if (player.score < 100)    font4x6.print("0");
+                if (player.score < 10)     font4x6.print("0");
+                font4x6.print(player.score);
+            }
+
+            break;
+
+        default:
+
+            break;
+
+    }
+
+}
+
+void checkBulletCollision(Bullet &bullet) {
+
+    // Has the bullet hit a large asteroid?
+
+    for (Asteroid &largeAsteroid : largeAsteroids) {
+
+        if (collide(bullet.x, bullet.y, Images::Bullet, largeAsteroid.x, largeAsteroid.y, Images::BigAsteroid[largeAsteroid.type])) {
+            bullet.hitObject = HitObject::LargeAsteroid;
+            bullet.hitCount = 1;
+            bullet.x = largeAsteroid.x - 4;
         }
 
     }
 
 
-    // Render player ..
+    // Has the bullet hit an enemy?
 
-    Sprites::drawExternalMask(9 + xOffset, y + yOffset, Images::PlayerShip, Images::PlayerShip_Mask, 0, 0);
-    Sprites::drawExternalMask(xOffset, y + 3 + yOffset, Images::ShipParticle, Images::ShipParticle_Mask, arduboy.getFrameCountHalf(8), arduboy.getFrameCountHalf(8));
+    for (Enemy &enemy : enemies) {
 
+        if (collide(bullet.x, bullet.y, Images::Bullet, enemy.x, enemy.y, Images::Enemy)) {
 
-    // Render the HUD ..
+            bullet.hitObject = HitObject::Enemy;
+            bullet.hitCount = 1;
+            bullet.x = enemy.x - 4;
 
-    arduboy.fillRect(78, 56, 64, 10, BLACK);
-    arduboy.fillRect(79, 56, 1, 10, WHITE);
-    arduboy.fillRect(127, 56, 1, 10, WHITE);
+            enemy.explodeCounter = 21;
+            enemy.active = false;
+            player.score = player.score + 5;
 
-    uint8_t health_Bar = health / Constants::Health_Factor;
+            arduboy.setFrameRate(50 + (player.score / 4));
 
-    font4x6.setCursor(82, 56);
-    if (score < 1000)   font4x6.print("0");
-    if (score < 100)    font4x6.print("0");
-    if (score < 10)     font4x6.print("0");
-    font4x6.print(score);
-
-
-    switch (health_Bar / 6) {
-
-        case 0: 
-            Sprites::drawSelfMasked(103, 57, Images::Shield, health_Bar % 6);
-            Sprites::drawSelfMasked(111, 57, Images::Shield, 0);
-            Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
-            break;
-
-        case 1:
-            Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
-            Sprites::drawSelfMasked(111, 57, Images::Shield, health_Bar % 6);
-            Sprites::drawSelfMasked(119, 57, Images::Shield, 0);
-            break;
-            
-
-        case 2:
-            Sprites::drawSelfMasked(103, 57, Images::Shield, 5);
-            Sprites::drawSelfMasked(111, 57, Images::Shield, 5);
-            Sprites::drawSelfMasked(119, 57, Images::Shield, health_Bar % 6);
-            break;
+        }
 
     }
 

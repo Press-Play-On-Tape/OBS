@@ -21,7 +21,13 @@ Point starfield[Constants::StarField_Size];
 Asteroid smallAsteroids[Constants::SmallAsteroid_Size];
 Asteroid largeAsteroids[Constants::LargeAsteroid_Size];
 Enemy enemies[Constants::Enemy_Size];
+Player player;
+
+#ifdef ONE_BULLET
 Bullet bullet;
+#else
+Bullets bullets;
+#endif
 
 int8_t xOffset = 0;
 int8_t yOffset = 0;
@@ -35,7 +41,7 @@ void setup() {
     arduboy.boot();
     arduboy.flashlight();
     arduboy.systemButtons();
-    arduboy.setFrameRate(60);
+    arduboy.setFrameRate(50);
     arduboy.initRandomSeed();
 
 //    EEPROM_Utils::initEEPROM(false, GameMode::English, true);
@@ -80,6 +86,7 @@ void loop() {
             break;
 
         case GameState::Game:
+        case GameState::Score:
 
             game();
             break;
