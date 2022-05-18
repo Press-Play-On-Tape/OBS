@@ -118,11 +118,11 @@ void game() {
                         #ifdef ORIG_BULLET
                             bullet.x = 24;
                             bullet.y = player.y + 5;
-                            bullet.muzzleIndex = 8;
+                            bullet.muzzleIndex = 4;
                         #else
                             bullet.x = 24;
                             bullet.y = player.y + 2;
-                            bullet.muzzleIndex = 8;
+                            bullet.muzzleIndex = 4;
                         #endif
                         
                         #ifdef SOUNDS
@@ -182,11 +182,11 @@ void game() {
                             #ifdef ORIG_BULLET
                                 bullet.x = 24;
                                 bullet.y = player.y + 5;
-                                bullet.muzzleIndex = 8;
+                                bullet.muzzleIndex = 4;
                             #else
                                 bullet.x = 24;
                                 bullet.y = player.y + 2;
-                                bullet.muzzleIndex = 8;
+                                bullet.muzzleIndex = 4;
                             #endif
 
                             #ifdef SOUNDS
@@ -643,7 +643,7 @@ void game() {
                     
                     if (bullet.x > 0) {
 
-                        if (bullet.muzzleIndex > 1) {
+                        if (bullet.muzzleIndex > 0) {
 // Serial.println(3 - bullet.muzzleIndex);
                             Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - bullet.muzzleIndex);
 
@@ -672,11 +672,11 @@ void game() {
                                                 
                         if (bullet.x > 0) {
                                 
-                            if (bullet.muzzleIndex > 1) {
-// Serial.print(bullet.muzzleIndex / 2);
+                            if (bullet.muzzleIndex > 0) {
+// Serial.print(bullet.muzzleIndex);
 // Serial.print(" ");
-// Serial.println(3 - (bullet.muzzleIndex / 2));
-                                Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - (bullet.muzzleIndex / 2));
+// Serial.println(3 - (bullet.muzzleIndex ));
+                                Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - bullet.muzzleIndex);
 
                             }
                             else {
