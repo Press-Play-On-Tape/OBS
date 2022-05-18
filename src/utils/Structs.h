@@ -38,6 +38,8 @@ struct Asteroid : public Point {
 struct Bullet : public Point {
 
     uint8_t hitCount = 0;
+    uint8_t muzzleIndex = 0;
+    
     HitObject hitObject = HitObject::None;
     
     void reset() {

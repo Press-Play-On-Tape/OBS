@@ -32,6 +32,19 @@ void title_Init() {
 
     gameState = GameState::Title;
 
+    for (Asteroid &smallAsteroid : smallAsteroids) {
+
+        smallAsteroid.x = random(0, 256);
+        smallAsteroid.y = random(0, 56);
+        
+    }
+
+    for (Asteroid &largeAsteroid : largeAsteroids) {
+
+        launchLargeAsteroid(largeAsteroid);
+        
+    }
+
     for (Point &star : starfield) {
 
         star.x = random(0, 128);
@@ -87,29 +100,40 @@ void title() {
       
     // Move and render starfield ..
 
-    for (Point &star : starfield) {
-
-        if (arduboy.getFrameCount(6) == 0) {
-
-            star.x--;
-
-            if (star.x == -1) {
-                star.x = 128;
-                star.y = random(0, 64);
-            }
-
-        }
-
-        arduboy.drawPixel(star.x + xOffset, star.y + yOffset);
-        
-    }
+    moveRenderStarfield();
 
     switch (titleScreenVars.mode) {
 
         case TitleMode::OBS:
 
+
+            // Move and render asteroids ..
+
+            moveRenderSmallAsteroids(true);
+            moveRenderLargeAsteroids(true);
+            
+
             Sprites::drawExternalMask(28, 11, Images::Title, Images::Title_Mask, 0, 0);
 
+            for (uint8_t i = 0; i < Constants::SmallAsteroid_Size; i++) {
+
+                Asteroid &smallAsteroid = smallAsteroids[i];
+
+                if (i % 2 == 1) {
+                    Sprites::drawExternalMask(smallAsteroid.x + xOffset, smallAsteroid.y + yOffset, Images::SmallAsteroid, Images::SmallAsteroid_Mask, 0, 0);
+                }
+                
+            }
+
+            for (uint8_t i = 0; i < Constants::LargeAsteroid_Size; i++) {
+            
+                Asteroid &largeAsteroid = largeAsteroids[i];
+                            
+                if (i % 2 == 1) {
+                    Sprites::drawExternalMask(largeAsteroid.x + xOffset, largeAsteroid.y + yOffset, Images::BigAsteroid[largeAsteroid.type], Images::BigAsteroid_Mask[largeAsteroid.type], 0, 0);
+                }
+                
+            }            
             break;
 
         case TitleMode::Scroll_One:

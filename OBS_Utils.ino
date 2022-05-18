@@ -255,3 +255,79 @@ bool collide(int16_t x1, int16_t y1, const uint8_t *img1, int16_t x2, int16_t y2
     return false;
 
 }
+
+void moveRenderStarfield() {
+
+    for (Point &star : starfield) {
+
+        if (arduboy.getFrameCount(6) == 0) {
+
+            star.x--;
+
+            if (star.x == -1) {
+                star.x = 128;
+                star.y = random(0, 64);
+            }
+
+        }
+
+        arduboy.drawPixel(star.x + xOffset, star.y + yOffset);
+        
+    }
+
+}
+
+void moveRenderSmallAsteroids(bool alternate) {
+
+
+    // Move and render small asteroids ..
+
+    for (uint8_t i = 0; i < Constants::SmallAsteroid_Size; i++) {
+
+        Asteroid &smallAsteroid = smallAsteroids[i];
+
+        if (arduboy.getFrameCount(3) == 0) {
+
+            smallAsteroid.x--;
+
+            if (smallAsteroid.x == -9) {
+                smallAsteroid.x = 128 + random(0, 96);
+                smallAsteroid.y = random(0, 56);
+            }
+
+        }
+
+        if (!alternate || (i % 2 == 0)) {
+            Sprites::drawExternalMask(smallAsteroid.x + xOffset, smallAsteroid.y + yOffset, Images::SmallAsteroid, Images::SmallAsteroid_Mask, 0, 0);
+        }
+        
+    }
+
+}
+
+void moveRenderLargeAsteroids(bool alternate) {
+
+    for (uint8_t i = 0; i < Constants::LargeAsteroid_Size; i++) {
+    
+        Asteroid &largeAsteroid = largeAsteroids[i];
+
+        if (arduboy.getFrameCount(2) == 0) {
+
+            largeAsteroid.x--;
+
+            if (largeAsteroid.x == -19) {
+
+                launchLargeAsteroid(largeAsteroid);
+
+            }
+
+        }
+
+
+        if (!alternate || (i % 2 == 0)) {
+            Sprites::drawExternalMask(largeAsteroid.x + xOffset, largeAsteroid.y + yOffset, Images::BigAsteroid[largeAsteroid.type], Images::BigAsteroid_Mask[largeAsteroid.type], 0, 0);
+        }
+        
+    }
+
+}
