@@ -1,9 +1,5 @@
 #pragma once
 
-#define _ORIG_BULLET
-#define _ORIG_PLAYER
-#define _ORIG_ENEMY
-#define _ONE_BULLET
 #define _ORIG_TITLE
 #define SOUNDS
 

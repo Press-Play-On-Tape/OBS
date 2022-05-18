@@ -50,7 +50,6 @@ struct Bullet : public Point {
 
 };
 
-#ifndef ONE_BULLET
 struct Bullets {
 
     Bullet bullets[Constants::Bullet_Count];
@@ -83,7 +82,6 @@ struct Bullets {
     }
 
 };
-#endif
 
 struct Enemy : public Point {
 

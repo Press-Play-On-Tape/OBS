@@ -30,11 +30,7 @@ void game_Init() {
         
     }
 
-    #ifdef ONE_BULLET
-    bullet.reset();
-    #else
     bullets.reset();
-    #endif
 
     player.reset();
     gameState = GameState::Game;
@@ -74,9 +70,13 @@ void game() {
                     player.direction = Direction::None;
                 }
 
-                #ifdef ONE_BULLET
+                if (arduboy.justPressed(A_BUTTON)) {
+                    
+                    uint8_t bulletIdx = bullets.getInactiveBullet();
 
-                    if (arduboy.justPressed(A_BUTTON) && bullet.x == -1) {
+                    if (bulletIdx != Constants::Bullet_None) {
+
+                        Bullet &bullet = bullets.bullets[bulletIdx];
 
                         switch (player.direction) {
 
@@ -115,95 +115,22 @@ void game() {
                                 
                         }
 
-                        #ifdef ORIG_BULLET
-                            bullet.x = 24;
-                            bullet.y = player.y + 5;
-                            bullet.muzzleIndex = 8;
-                        #else
-                            bullet.x = 24;
-                            bullet.y = player.y + 2;
-                            bullet.muzzleIndex = 8;
-                        #endif
-                        
+                        bullet.x = 24;
+                        bullet.y = player.y + 2;
+                        bullet.muzzleIndex = 8;
+
                         #ifdef SOUNDS
                             sound.tones(Sounds::PlayerFiresBullet);
                         #endif
+
                         bullet.hitObject = HitObject::None;
 
                     }
 
-                #else
+                }
 
-                    if (arduboy.justPressed(A_BUTTON)) {
+                for (Bullet &bullet : bullets.bullets) {
                         
-                        uint8_t bulletIdx = bullets.getInactiveBullet();
-
-                        if (bulletIdx != Constants::Bullet_None) {
-
-                            Bullet &bullet = bullets.bullets[bulletIdx];
-
-                            switch (player.direction) {
-
-                                case Direction::Up:
-                                    player.direction = Direction::Down;
-                                    break;
-
-                                case Direction::Down:
-                                    player.direction = Direction::Up;
-                                    break;
-
-                                default:
-
-                                    switch (player.y) {
-
-                                        case 0:
-                                            player.direction = Direction::Down;
-                                            break;
-
-                                        case 54:
-                                            player.direction = Direction::Up;
-                                            break;
-
-                                        default:
-                                            if (random(0,2) == 0) {
-                                                player.direction = Direction::Up;
-                                            }
-                                            else {
-                                                player.direction = Direction::Down;
-                                            }
-                                            break;
-
-                                    }
-
-                                    break;
-                                    
-                            }
-
-                            #ifdef ORIG_BULLET
-                                bullet.x = 24;
-                                bullet.y = player.y + 5;
-                                bullet.muzzleIndex = 8;
-                            #else
-                                bullet.x = 24;
-                                bullet.y = player.y + 2;
-                                bullet.muzzleIndex = 8;
-                            #endif
-
-                            #ifdef SOUNDS
-                                sound.tones(Sounds::PlayerFiresBullet);
-                            #endif
-
-                            bullet.hitObject = HitObject::None;
-
-                        }
-
-                    }
-
-                #endif
-
-
-                #ifdef ONE_BULLET
-
                     if (bullet.hitCount > 0) {
 
                         bullet.hitCount++;
@@ -214,19 +141,13 @@ void game() {
 
                     }
 
-                    if (bullet.hitObject == HitObject::LargeAsteroid) {
-
-                        bullet.x--;
-
-                    }                    
-
                     if (bullet.x > 0 && bullet.hitCount == 0) {
 
                         if (bullet.muzzleIndex > 0) {
 
-//                            if (arduboy.getFrameCount(2) == 0) {
+//                                if (arduboy.getFrameCount(2) == 0) {
                                 bullet.muzzleIndex--;
-//                            }
+//                                }
 
                         }
                         else {
@@ -243,62 +164,15 @@ void game() {
 
                         if (bullet.x != -1) checkBulletCollision(bullet);
 
-                        if (bullet.hitObject == HitObject::LargeAsteroid) {
+                    }
 
-                            bullet.x--;
+                    if (bullet.hitObject == HitObject::LargeAsteroid) {
 
-                        }
+                        bullet.x--;
 
                     }
 
-                #else
-
-                    for (Bullet &bullet : bullets.bullets) {
-                            
-                        if (bullet.hitCount > 0) {
-
-                            bullet.hitCount++;
-
-                            if (bullet.hitCount > 3) {
-                                bullet.reset();
-                            }
-
-                        }
-
-                        if (bullet.x > 0 && bullet.hitCount == 0) {
-
-                            if (bullet.muzzleIndex > 0) {
-
-//                                if (arduboy.getFrameCount(2) == 0) {
-                                    bullet.muzzleIndex--;
-//                                }
-
-                            }
-                            else {
-
-                                bullet.x = bullet.x + 4;
-
-                                if (bullet.x >= 128) {
-
-                                    bullet.x = -1;
-
-                                }
-
-                            }
-
-                            if (bullet.x != -1) checkBulletCollision(bullet);
-
-                        }
-
-                        if (bullet.hitObject == HitObject::LargeAsteroid) {
-
-                            bullet.x--;
-
-                        }
-
-                    }
-
-                #endif
+                }
 
 
                 // Has the player hit a asteroid?
@@ -637,19 +511,21 @@ void game() {
                 }
 
 
-                // Render player bullet ..
-
-                #ifdef ONE_BULLET
-                    
+                // Render player bullets ..
+                
+                for (Bullet &bullet : bullets.bullets) {
+                                            
                     if (bullet.x > 0) {
-
+                            
                         if (bullet.muzzleIndex > 1) {
-// Serial.println(3 - bullet.muzzleIndex);
-                            Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - bullet.muzzleIndex);
+// Serial.print(bullet.muzzleIndex / 2);
+// Serial.print(" ");
+// Serial.println(3 - (bullet.muzzleIndex / 2));
+                            Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - (bullet.muzzleIndex / 2));
 
                         }
                         else {
-                                
+
                             switch (bullet.hitCount) {
 
                                 case 0:
@@ -666,40 +542,7 @@ void game() {
 
                     }
 
-                #else
-                    
-                    for (Bullet &bullet : bullets.bullets) {
-                                                
-                        if (bullet.x > 0) {
-                                
-                            if (bullet.muzzleIndex > 1) {
-// Serial.print(bullet.muzzleIndex / 2);
-// Serial.print(" ");
-// Serial.println(3 - (bullet.muzzleIndex / 2));
-                                Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - (bullet.muzzleIndex / 2));
-
-                            }
-                            else {
-
-                                switch (bullet.hitCount) {
-
-                                    case 0:
-                                        Sprites::drawExternalMask(bullet.x + xOffset, bullet.y + yOffset, Images::Bullet, Images::Bullet_Mask, 0, 0);
-                                        break;
-
-                                    default:
-                                        Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y - 5 + yOffset, Images::Hit, bullet.hitCount - 1);
-                                        break;
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                #endif
+                }
 
 
                 // Render the HUD ..
