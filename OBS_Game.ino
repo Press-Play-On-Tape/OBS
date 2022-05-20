@@ -44,6 +44,9 @@ void game_Init() {
 
 void game() {
 
+    uint8_t justPressed = arduboy.justPressedButtons();
+    uint8_t pressed = arduboy.pressedButtons();
+
 
     // Move player ..
 
@@ -70,7 +73,7 @@ void game() {
                     player.direction = Direction::None;
                 }
 
-                if (arduboy.justPressed(A_BUTTON)) {
+                if (justPressed > 0) {
                     
                     uint8_t bulletIdx = bullets.getInactiveBullet();
 
@@ -120,9 +123,8 @@ void game() {
                         bullet.muzzleIndex = 8;
 
                         #ifdef SOUNDS
-                            sound.tones(Sounds::PlayerFiresBullet);
+                            tunes.playScore(Sounds::PlayerFiresBullet);
                         #endif
-
                         bullet.hitObject = HitObject::None;
 
                     }
@@ -187,17 +189,16 @@ void game() {
                             player.health--;
 
                             #ifdef SOUNDS
-                                sound.tones(Sounds::PlayerHit);
-                            #endif
+                                tunes.playScore(Sounds::PlayerHit);
+                            #endif                            
                         }
 
                         if (player.health == 0) {
                             player.explodeCounter = 21;
 
                             #ifdef SOUNDS
-                                sound.tones(Sounds::PlayerDies);
-                            #endif
-
+                                tunes.playScore(Sounds::PlayerDies);
+                            #endif         
                         }
 
                         collision = true;
@@ -236,18 +237,16 @@ void game() {
                                 player.health--;
 
                                 #ifdef SOUNDS
-                                    sound.tones(Sounds::PlayerHit);
+                                    tunes.playScore(Sounds::PlayerHit);
                                 #endif
-
                             }
 
                             if (player.health == 0) {
                                 player.explodeCounter = 21;
 
                                 #ifdef SOUNDS
-                                    sound.tones(Sounds::PlayerDies);
-                                #endif
-
+                                    tunes.playScore(Sounds::PlayerDies);
+                                #endif  
                             }
                             
                             collision = true;
@@ -290,7 +289,7 @@ void game() {
 
         case GameState::Score:
 
-            if (arduboy.justPressed(A_BUTTON)) {
+            if ((justPressed & A_BUTTON) || (justPressed & UP_BUTTON) || (justPressed & DOWN_BUTTON) || (justPressed & LEFT_BUTTON) || (justPressed & RIGHT_BUTTON)) {
 
                 gameState = GameState::Title_Init;
 
@@ -299,24 +298,28 @@ void game() {
 
             // Clear scores ..
 
-            if (arduboy.pressed(B_BUTTON)) {
+            if (pressed & B_BUTTON) {
 
                 clearScores++;
 
                 switch (clearScores) {
 
                     case 21 ... 60:
-                    arduboy.setRGBled(128 - (clearScores * 2), 0, 0);
-                    break;
+                        //arduboy.setRGBled(128 - (clearScores * 2), 0, 0);
+                        break;
 
                     case 61:
-                    clearScores = 0;
-                    player.score = 0;
-                    scoreIndex = 255;
-                    arduboy.setRGBled(0, 0, 0);
-                    EEPROM_Utils::initEEPROM(true);
-                    sound.tone(NOTE_C6, 100);
-                    return;
+                        clearScores = 0;
+                        player.score = 0;
+                        scoreIndex = 255;
+                        //arduboy.setRGBled(0, 0, 0);
+                        EEPROM_Utils::initEEPROM(true);
+
+                        #ifdef SOUNDS
+                            tunes.playScore(Sounds::Beep);
+                        #endif
+                        
+                        return;
 
                 }
 
@@ -325,7 +328,7 @@ void game() {
 
                 if (clearScores > 0) {
                 
-                    arduboy.setRGBled(0, 0, 0);
+                    //arduboy.setRGBled(0, 0, 0);
                     clearScores = 0;
 
                 }
@@ -518,9 +521,7 @@ void game() {
                     if (bullet.x > 0) {
                             
                         if (bullet.muzzleIndex > 1) {
-// Serial.print(bullet.muzzleIndex / 2);
-// Serial.print(" ");
-// Serial.println(3 - (bullet.muzzleIndex / 2));
+
                             Sprites::drawSelfMasked(bullet.x + xOffset, bullet.y + yOffset, Images::Muzzle, 3 - (bullet.muzzleIndex / 2));
 
                         }
@@ -640,8 +641,8 @@ void checkBulletCollision(Bullet &bullet) {
             arduboy.setFrameRate(50 + (player.score / 24));
 
             #ifdef SOUNDS
-                sound.tones(Sounds::EnemyExplosion);
-            #endif
+                tunes.playScore(Sounds::EnemyExplosion);
+            #endif            
 
         }
 

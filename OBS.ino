@@ -1,6 +1,5 @@
 
 #include "src/utils/Arduboy2Ext.h"
-#include <ArduboyTones.h>
 
 #include "src/images/Images.h"
 #include "src/utils/Constants.h"
@@ -11,7 +10,13 @@
 #include "src/sounds/Sounds.h"
 
 Arduboy2Ext arduboy;
-ArduboyTones sound(arduboy.audio.enabled);
+
+#ifdef SOUNDS
+#include <ArduboyPlaytune.h>
+ArduboyPlaytune tunes(arduboy.audio.enabled);
+#endif
+
+
 Font4x6 font4x6 = Font4x6();
 
 SplashScreenVars splashScreenVars;
@@ -43,7 +48,12 @@ void setup() {
     arduboy.systemButtons();
     arduboy.setFrameRate(50);
     arduboy.initRandomSeed();
-    arduboy.audio.begin();
+
+    #ifdef SOUNDS
+        arduboy.audio.begin();
+        tunes.initChannel(PIN_SPEAKER_1);
+        tunes.initChannel(PIN_SPEAKER_2);   
+    #endif
 
     EEPROM_Utils::initEEPROM(false);
 

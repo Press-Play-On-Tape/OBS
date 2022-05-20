@@ -56,7 +56,7 @@ void title_Init() {
     player.reset();
 
     #ifdef SOUNDS
-        sound.tones(Sounds::Title);
+        tunes.playScore(Sounds::Title);
     #endif
 
 }
@@ -67,16 +67,18 @@ void title_Init() {
 //
 void title() { 
 
-    if (arduboy.justPressed(A_BUTTON)) {
+    uint8_t justPressed = arduboy.justPressedButtons();
+
+    if (justPressed > 0) {
 
         switch (titleScreenVars.mode) {
 
             case TitleMode::OBS:
 
                 #ifdef SOUNDS
-                sound.noTone();
+                    tunes.stopScore();
                 #endif
-                
+
                 titleScreenVars.mode = TitleMode::Scroll_One;
                 titleScreenVars.counter = 64;
                 break;
@@ -157,7 +159,7 @@ void title() {
             if (titleScreenVars.index < textLengths[titleScreenVars.panel] && arduboy.getFrameCount(6) == 0) {
                 
                 #ifdef SOUNDS                
-                    sound.tones(Sounds::Keypress);
+                    tunes.playScore(Sounds::Keypress);
                 #endif
 
             }

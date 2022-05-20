@@ -1,6 +1,5 @@
 #pragma once
 
-#define _ORIG_TITLE
 #define SOUNDS
 
 namespace Constants {
