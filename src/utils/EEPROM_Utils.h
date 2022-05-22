@@ -12,6 +12,7 @@ class EEPROM_Utils {
         static void initEEPROM(bool forceClear);
         static uint16_t getScore(uint8_t index);
         static uint8_t saveScore(uint16_t score);
+        static int16_t checkSum(bool update);
 
 };
 
@@ -35,7 +36,22 @@ void EEPROM_Utils::initEEPROM(bool forceClear) {
 
         }
 
+        EEPROM_Utils::checkSum(true);
+
     }
+    else {
+
+        int16_t checkSumOld = 0;
+        int16_t checkSumNow = EEPROM_Utils::checkSum(false);
+        EEPROM.get(Constants::EEPROM_Checksum, checkSumOld);
+
+        if (checkSumNow != checkSumOld) {
+
+            EEPROM_Utils::initEEPROM(true);
+
+        }
+        
+    }   
 
 }
 
@@ -55,6 +71,7 @@ uint8_t EEPROM_Utils::saveScore(uint16_t score) {
         EEPROM.put(Constants::EEPROM_Scores + 4, getScore(1));
         EEPROM.put(Constants::EEPROM_Scores + 2, getScore(0));
         EEPROM.put(Constants::EEPROM_Scores, score);
+        EEPROM_Utils::checkSum(true);
         return 0;
 
     }
@@ -63,6 +80,7 @@ uint8_t EEPROM_Utils::saveScore(uint16_t score) {
 
         EEPROM.put(Constants::EEPROM_Scores + 4, getScore(1));
         EEPROM.put(Constants::EEPROM_Scores + 2, score);
+        EEPROM_Utils::checkSum(true);
         return 1;
 
     }
@@ -70,10 +88,33 @@ uint8_t EEPROM_Utils::saveScore(uint16_t score) {
     if (score >= getScore(2)) {
 
         EEPROM.put(Constants::EEPROM_Scores + 4, score);
+        EEPROM_Utils::checkSum(true);
         return 2;
 
     }
 
     return 255;
+
+}
+
+
+/* -----------------------------------------------------------------------------
+ *   Generate and optionally save a check sum .. 
+ */
+int16_t EEPROM_Utils::checkSum(bool update) {
+
+    int16_t checksum = 0;
+
+    for (uint8_t i = 0; i < (Constants::EEPROM_End - Constants::EEPROM_Start); i++) {
+
+        checksum = checksum + ((i % 2 == 0 ? 1 : -1) * eeprom_read_byte(reinterpret_cast<uint8_t *>(Constants::EEPROM_Start + i)));
+
+    }
+
+    if (update) {
+        EEPROM.put(Constants::EEPROM_Checksum, checksum);
+    }
+
+    return checksum;
 
 }
